@@ -8,45 +8,55 @@ import java.io.Closeable;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
-class KafkaService implements Closeable {
-    private final KafkaConsumer<String, String> consumer;
-    private final ConsumerFunction parse;
+class KafkaService<T> implements Closeable {
+  private final KafkaConsumer<String, T> consumer;
+  private final ConsumerFunction parse;
 
-    KafkaService(String groupId, String topic, ConsumerFunction parse) {
-        this.parse = parse;
-        this.consumer = new KafkaConsumer<>(properties(groupId));
-        consumer.subscribe(Collections.singletonList(topic));
+  KafkaService(String groupId, String topic, ConsumerFunction parse,
+               Class<T> type) {
+    this.parse = parse;
+    this.consumer = new KafkaConsumer<>(properties(type, groupId));
+    consumer.subscribe(Collections.singletonList(topic));
+  }
+
+  public KafkaService(String groupId, Pattern topic, ConsumerFunction parse, Class<T> type) {
+    this.parse = parse;
+    this.consumer = new KafkaConsumer<>(properties(type, groupId));
+    consumer.subscribe(topic);
+  }
+
+  private Properties properties(Class<T> type,
+                                String groupId) {
+    Properties properties = new Properties();
+    properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127" +
+        ".0.0.1:9092");
+    properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getName());
+    properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG
+        , GsonDeserializer.class.getName());
+    properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
+        groupId);
+    properties.setProperty(GsonDeserializer.TYPE_CONFIG, type.getName());
+    return properties;
+  }
+
+  void run() throws InterruptedException {
+    while (true) {
+      var records = consumer.poll(Duration.ofMillis(100));
+      if (!records.isEmpty()) {
+        System.out.println("Encontrei " + records.count() +
+            " registros");
+      }
+      for (var record : records) {
+        parse.consume(record);
+      }
     }
+  }
 
-    private static Properties properties(String groupId) {
-        Properties properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127" +
-                ".0.0.1:9092");
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG
-                , StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
-                groupId);
-        return properties;
-    }
-
-    void run() throws InterruptedException {
-        while (true) {
-            var records = consumer.poll(Duration.ofMillis(100));
-            if (!records.isEmpty()) {
-                System.out.println("Encontrei " + records.count() +
-                        " registros");
-            }
-            for (var record : records) {
-                parse.consume(record);
-            }
-        }
-    }
-
-    @Override
-    public void close() {
-        consumer.close();
-    }
+  @Override
+  public void close() {
+    consumer.close();
+  }
 }

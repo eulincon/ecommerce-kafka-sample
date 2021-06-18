@@ -1,0 +1,6 @@
+/home/kali/github/ecommerce/common-kafka/src/main/java/br/com/zupacademy/lincon/KafkaDispatcher.java
+/home/kali/github/ecommerce/common-kafka/src/main/java/br/com/zupacademy/lincon/GsonDeserializer.java
+/home/kali/github/ecommerce/common-kafka/src/main/java/br/com/zupacademy/lincon/Email.java
+/home/kali/github/ecommerce/common-kafka/src/main/java/br/com/zupacademy/lincon/ConsumerFunction.java
+/home/kali/github/ecommerce/common-kafka/src/main/java/br/com/zupacademy/lincon/GsonSerializer.java
+/home/kali/github/ecommerce/common-kafka/src/main/java/br/com/zupacademy/lincon/KafkaService.java
